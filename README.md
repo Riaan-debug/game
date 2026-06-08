@@ -1,0 +1,68 @@
+# Life Sim — Phase 5
+
+Web-first life sim with **cloud save sync**, neighborhood travel, NPC friendships, work shifts, and everything from Phases 0–4.
+
+### Recent polish (pre–Phase 5)
+- Travel fade + “Traveling to / Arrived at” toast when changing lots
+- Per-lot lighting and environment presets (home, park, office, shop)
+- Named lot signs and clearer landmarks outdoors
+
+## Phase 4 features
+
+### Four locations
+Use the **neighborhood bar** at the top to travel between:
+- **Home** — your furnished room; Build Mode and furniture interactions work here only
+- **Park** — bench (sit), pond (watch)
+- **Office** — clock in at the desk for a work shift (rabbit-hole: Sim stays at desk until shift ends)
+- **Corner Shop** — buy coffee for hunger, fun, and a small friendship bump with Riley
+
+### NPCs and schedules
+Three neighbors appear based on sim time:
+| NPC | Typical spots |
+|-----|----------------|
+| Alex | Home mornings, Park afternoons |
+| Sam | Office during work hours, Park evenings |
+| Riley | Shop most of the day |
+
+Tap an NPC when they are present to walk over and chat. Friendship meters show in the HUD and increase after conversations.
+
+### Work shift
+1. Travel to **Office**
+2. Tap **Clock In** at the desk
+3. Shift runs on accelerated sim time (~4 in-game hours); needs decay slowly while working
+4. When the shift ends, you return **Home** with energy cost, social boost, and +friendship with Sam
+
+Travel and most interactions are disabled while on shift.
+
+## Earlier phases (still included)
+
+### Five needs + mood
+Hunger, Energy, Hygiene, Fun, Social — mood from needs, day/night lighting, Cooking and Fitness skills.
+
+### Home furniture
+Eat, sleep, sit, shower, TV, read — same as Phase 3.
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open on your phone via the LAN URL Vite prints (`--host` is enabled).
+
+## Phase 5 — Cloud save sync
+
+Requires Supabase (free tier is fine). Full setup: **[docs/PHASE5_CLOUD_SYNC.md](docs/PHASE5_CLOUD_SYNC.md)**
+
+1. Copy `.env.example` → `.env` and add your Supabase URL + anon key.
+2. Run `supabase/schema.sql` in the Supabase SQL editor.
+3. Use **Sign in** (top right) for a magic-link email.
+4. Play — status shows **Synced** when cloud upload succeeds.
+
+Guest play still works without signing in (local save only). If device and cloud both have saves, you pick which to keep.
+
+## Roadmap
+
+- **Phase 6** — Walkable 3D neighborhood + 3D art pass
+- **Phase 7+** — Async social / multiplayer exploration
