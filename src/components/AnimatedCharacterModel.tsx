@@ -2,7 +2,14 @@ import { useAnimations, useGLTF } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { Box3, Color, LoopRepeat, type Group, type Material, type Object3D, type SkinnedMesh } from 'three';
+import {
+  Color,
+  LoopRepeat,
+  type Group,
+  type Material,
+  type Object3D,
+  type SkinnedMesh,
+} from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { MODEL_PATHS } from '../game/modelPaths';
 import type { SimActivity } from '../game/types';
@@ -16,7 +23,9 @@ interface AnimatedCharacterModelProps {
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
 }
 
-const TARGET_HEIGHT = 1.75;
+/** RobotExpressive in our asset is ~4.8 units tall; normalize to ~1.75m sim height. */
+const CHARACTER_SCALE = 1.75 / 4.79;
+const FOOT_CLEARANCE = 0.02;
 
 function pickClipName(activity: SimActivity, names: string[]): string | null {
   const lower = names.map((name) => name.toLowerCase());
@@ -36,40 +45,31 @@ function pickClipName(activity: SimActivity, names: string[]): string | null {
   return idleIdx >= 0 ? names[idleIdx] : names[0] ?? null;
 }
 
-function applyTint(root: Object3D, tint?: string) {
-  if (!tint) return;
-  const color = new Color(tint);
-  root.traverse((child) => {
-    const mesh = child as SkinnedMesh;
-    if (!mesh.isSkinnedMesh || !mesh.material) return;
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) {
-      const standard = material as Material & { color?: Color; emissive?: Color };
-      if (standard.color) {
-        standard.color.lerp(color, 0.35);
-      }
-      if (standard.emissive) {
-        standard.emissive.set(color).multiplyScalar(0.08);
-      }
-    }
-  });
-}
-
-function prepareCharacterClone(scene: Object3D, tint?: string) {
-  // Regular Object3D.clone breaks skinned-mesh bone bindings (floating limbs).
+function prepareClone(scene: Object3D, tint?: string) {
   const clone = SkeletonUtils.clone(scene) as Group;
   clone.traverse((child) => {
     if ('castShadow' in child) child.castShadow = true;
     if ('receiveShadow' in child) child.receiveShadow = true;
+    if ('frustumCulled' in child) child.frustumCulled = false;
   });
-  applyTint(clone, tint);
 
-  const box = new Box3().setFromObject(clone);
-  const height = Math.max(box.max.y - box.min.y, 0.001);
-  clone.scale.setScalar(TARGET_HEIGHT / height);
+  if (tint) {
+    const color = new Color(tint);
+    clone.traverse((child) => {
+      const mesh = child as SkinnedMesh;
+      if (!mesh.isSkinnedMesh || !mesh.material) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const clonedMaterials = materials.map((material) => {
+        const clonedMat = material.clone() as Material & { color?: Color; emissive?: Color };
+        if (clonedMat.color) clonedMat.color.lerp(color, 0.35);
+        if (clonedMat.emissive) clonedMat.emissive.set(color).multiplyScalar(0.08);
+        return clonedMat;
+      });
+      mesh.material = Array.isArray(mesh.material) ? clonedMaterials : clonedMaterials[0];
+    });
+  }
 
-  const grounded = new Box3().setFromObject(clone);
-  return { clone, groundOffset: -grounded.min.y };
+  return clone;
 }
 
 export function AnimatedCharacterModel({
@@ -82,12 +82,8 @@ export function AnimatedCharacterModel({
   const rootRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const { scene, animations } = useGLTF(MODEL_PATHS.character);
+  const clone = useMemo(() => prepareClone(scene, tint), [scene, tint]);
   const { actions, names } = useAnimations(animations, modelRef);
-
-  const { clone, groundOffset } = useMemo(
-    () => prepareCharacterClone(scene, tint),
-    [scene, tint],
-  );
 
   useEffect(() => {
     const clipName = pickClipName(activity, names);
@@ -110,21 +106,21 @@ export function AnimatedCharacterModel({
   useFrame(() => {
     if (!rootRef.current) return;
     rootRef.current.position.set(position[0], position[1], position[2]);
+    rootRef.current.rotation.set(0, rotation, 0);
 
     if (activity === 'sleeping') {
-      rootRef.current.rotation.set(-Math.PI / 2, rotation, 0);
       rootRef.current.position.y = 0.35;
       return;
     }
 
-    rootRef.current.rotation.set(0, rotation, 0);
-    rootRef.current.position.y = activity === 'walking' ? Math.sin(Date.now() * 0.012) * 0.02 : 0;
+    rootRef.current.position.y =
+      activity === 'walking' ? Math.sin(Date.now() * 0.012) * 0.02 : 0;
   });
 
   return (
-    <group ref={rootRef} onPointerDown={onPointerDown}>
-      <group ref={modelRef} position={[0, groundOffset, 0]}>
-        <primitive object={clone} />
+    <group ref={rootRef} dispose={null} onPointerDown={onPointerDown}>
+      <group dispose={null} scale={CHARACTER_SCALE} position={[0, FOOT_CLEARANCE, 0]}>
+        <primitive ref={modelRef} object={clone} />
       </group>
     </group>
   );
