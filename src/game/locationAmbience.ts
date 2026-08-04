@@ -34,6 +34,12 @@ export const LOCATION_AMBIENCE: Record<LocationId, LocationAmbience> = {
     accentIntensity: 0.2,
     fogFarOffset: -1,
   },
+  street: {
+    environment: 'city',
+    accentColor: '#ffe9c4',
+    accentIntensity: 0.15,
+    fogFarOffset: 10,
+  },
 };
 
 export function getLocationAmbience(location: LocationId): LocationAmbience {

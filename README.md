@@ -1,6 +1,15 @@
-# Life Sim — Phase 5
+# Life Sim — Phase 6 (in progress)
 
-Web-first life sim with **cloud save sync**, neighborhood travel, NPC friendships, work shifts, and everything from Phases 0–4.
+Web-first life sim with a **walkable street**, cloud save sync, neighborhood travel, NPC friendships, work shifts, and everything from Phases 0–5.
+
+## Phase 6.1 — Walkable neighborhood (vertical slice)
+
+A new **Street** lot connects the four destinations. Walk onto a glowing entrance pad
+(or tap it) to enter Home, Park, Office, or Corner Shop on foot — no more teleport-only
+travel. The street has its own interactables (fountain, bench) and a camera that follows
+your Sim across the larger lot. The travel bar still works everywhere.
+
+Architecture and migration plan: **[docs/PHASE6_NEIGHBORHOOD.md](docs/PHASE6_NEIGHBORHOOD.md)**
 
 ### Recent polish (pre–Phase 5)
 - Travel fade + “Traveling to / Arrived at” toast when changing lots
@@ -64,5 +73,6 @@ Guest play still works without signing in (local save only). If device and cloud
 
 ## Roadmap
 
-- **Phase 6** — Walkable 3D neighborhood + 3D art pass
+- **Phase 6.2** — Exit doors back to the street from every lot, NPC street commutes
+- **Phase 6.3** — 3D art pass (GLTF models, pathfinding)
 - **Phase 7+** — Async social / multiplayer exploration

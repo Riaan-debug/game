@@ -79,6 +79,7 @@ export function NeedsHUD() {
 
   const locationHints: Record<typeof world.currentLocation, string> = {
     home: 'Tap furniture to interact',
+    street: 'Walk to a glowing pad to enter a lot',
     park: 'Bench, pond, or NPCs',
     work: 'Clock in at the desk',
     shop: 'Buy coffee at the counter',

@@ -33,10 +33,45 @@ function SimulationLoop() {
   return null;
 }
 
+/**
+ * Pans the orbit target (and camera, preserving the user's orbit angle)
+ * toward the sim on lots larger than one screen.
+ */
+function FollowCamera() {
+  const { world } = useGame();
+  const controls = useThree((state) => state.controls) as unknown as {
+    target: THREE.Vector3;
+    update: () => void;
+  } | null;
+  const camera = useThree((state) => state.camera);
+
+  useFrame((_state, delta) => {
+    if (!controls) return;
+    const follow = world.currentLocation === 'street';
+    const [sx, , sz] = world.sim.position;
+    const desiredX = follow ? sx : 0;
+    const desiredZ = follow ? sz : 0;
+
+    const damp = 1 - Math.pow(0.0005, delta);
+    const dx = (desiredX - controls.target.x) * damp;
+    const dz = (desiredZ - controls.target.z) * damp;
+    if (Math.abs(dx) < 0.0001 && Math.abs(dz) < 0.0001) return;
+
+    controls.target.x += dx;
+    controls.target.z += dz;
+    camera.position.x += dx;
+    camera.position.z += dz;
+    controls.update();
+  });
+
+  return null;
+}
+
 function SceneContents() {
   const { world, moveTo, placeAt } = useGame();
   const buildMode = world.mode === 'build' && world.currentLocation === 'home';
   const { environment } = getLocationAmbience(world.currentLocation);
+  const isStreet = world.currentLocation === 'street';
 
   const handleFloorClick = (x: number, z: number) => {
     if (buildMode) {
@@ -55,8 +90,9 @@ function SceneContents() {
       <Environment preset={environment} />
 
       <LocationView onFloorClick={handleFloorClick} />
-      <ContactShadows opacity={0.45} scale={10} blur={2.5} far={4} />
+      <ContactShadows opacity={0.45} scale={isStreet ? 24 : 10} blur={2.5} far={4} />
 
+      <FollowCamera />
       <OrbitControls
         makeDefault
         enablePan={false}

@@ -4,7 +4,6 @@ import {
   ARRIVAL_THRESHOLD,
   clampNeed,
   clampSkill,
-  clampToRoom,
   ENERGY_DECAY_PER_SEC,
   FUN_DECAY_PER_SEC,
   HUNGER_DECAY_PER_SEC,
@@ -16,9 +15,9 @@ import {
 import { getInteractablesFromFurniture } from './buildLogic';
 import { getLocationProp } from './locationProps';
 import { clampFriendship, getActiveNpcs, getNpcDef } from './npcLogic';
-import { getSpawnForLocation, WORK_SHIFT_MINUTES } from './locations';
+import { clampToLocation, getSpawnForLocation, isLocationId, WORK_SHIFT_MINUTES } from './locations';
 import { computeMood, getTimeOfDay } from './moodLogic';
-import type { InteractionKind, SimActivity, SimAppearance, SimSkills, SimState, WorldState } from './types';
+import type { InteractionKind, LocationId, SimActivity, SimAppearance, SimSkills, SimState, WorldState } from './types';
 import { WORLD_STATE_VERSION } from './types';
 
 function defaultAppearance(): SimAppearance {
@@ -91,6 +90,10 @@ export function normalizeSim(sim: SimState): SimState {
   return { ...normalized, mood: computeMood(normalized) };
 }
 
+function normalizeLocation(value: unknown): LocationId {
+  return isLocationId(value) ? value : 'home';
+}
+
 export function migrateWorldState(state: WorldState): WorldState {
   const defaults = createInitialWorldState();
   if (!state.furniture || state.furniture.length === 0) {
@@ -99,7 +102,7 @@ export function migrateWorldState(state: WorldState): WorldState {
       ...state,
       version: WORLD_STATE_VERSION,
       furniture: defaults.furniture,
-      currentLocation: state.currentLocation ?? 'home',
+      currentLocation: normalizeLocation(state.currentLocation),
       relationships: state.relationships ?? defaults.relationships,
       isWorking: false,
       workEndsAtMinute: 0,
@@ -112,7 +115,7 @@ export function migrateWorldState(state: WorldState): WorldState {
   return {
     ...state,
     version: WORLD_STATE_VERSION,
-    currentLocation: state.currentLocation ?? 'home',
+    currentLocation: normalizeLocation(state.currentLocation),
     relationships: state.relationships ?? defaults.relationships,
     isWorking: state.isWorking ?? false,
     workEndsAtMinute: state.workEndsAtMinute ?? 0,
@@ -209,8 +212,8 @@ function finishInteraction(sim: SimState): SimState {
   };
 }
 
-export function moveSimTo(sim: SimState, x: number, z: number): SimState {
-  const [cx, cz] = clampToRoom(x, z);
+export function moveSimTo(sim: SimState, x: number, z: number, location: LocationId): SimState {
+  const [cx, cz] = clampToLocation(location, x, z);
   return {
     ...sim,
     activity: 'walking',

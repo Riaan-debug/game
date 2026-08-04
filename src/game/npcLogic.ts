@@ -44,6 +44,7 @@ const NPC_POSITIONS: Record<LocationId, Record<string, [number, number, number]>
   park: { alex: [1.5, 0, -1], sam: [-1.5, 0, 0.5] },
   work: { sam: [0, 0, -1.5] },
   shop: { riley: [0.5, 0, -1] },
+  street: {},
 };
 
 export function getNpcDef(id: string): NpcDef | undefined {

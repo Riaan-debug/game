@@ -1,6 +1,6 @@
-export const WORLD_STATE_VERSION = 5;
+export const WORLD_STATE_VERSION = 6;
 
-export type LocationId = 'home' | 'park' | 'work' | 'shop';
+export type LocationId = 'home' | 'park' | 'work' | 'shop' | 'street';
 
 export type SimActivity =
   | 'idle'

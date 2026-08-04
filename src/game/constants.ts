@@ -24,12 +24,4 @@ export function clampSkill(value: number): number {
   return Math.max(0, Math.min(SKILL_MAX, value));
 }
 
-export function clampToRoom(x: number, z: number): [number, number] {
-  const margin = 0.4;
-  return [
-    Math.max(-ROOM_HALF + margin, Math.min(ROOM_HALF - margin, x)),
-    Math.max(-ROOM_HALF + margin, Math.min(ROOM_HALF - margin, z)),
-  ];
-}
-
 export type { InteractableDef };

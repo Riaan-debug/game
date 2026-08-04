@@ -33,6 +33,7 @@ import {
   updateSimAppearance,
 } from './simLogic';
 import { getActiveNpcs } from './npcLogic';
+import { getPortalNear } from './locations';
 import { getLocationProp } from './locationProps';
 import { bootstrapWorldState, type SaveConflict } from './bootstrapSave';
 import { upsertCloudSave } from './cloudSave';
@@ -69,11 +70,17 @@ function gameReducer(state: WorldState, action: GameAction): WorldState {
   switch (action.type) {
     case 'HYDRATE':
       return migrateWorldState(action.state);
-    case 'TICK':
-      return tickWorld(state, action.delta);
+    case 'TICK': {
+      const next = tickWorld(state, action.delta);
+      if (next.currentLocation === 'street' && !next.isWorking) {
+        const portal = getPortalNear(next.sim.position);
+        if (portal) return travelToLocation(next, portal.location);
+      }
+      return next;
+    }
     case 'MOVE':
       if (state.mode !== 'live' || state.isWorking) return state;
-      return { ...state, sim: moveSimTo(state.sim, action.x, action.z) };
+      return { ...state, sim: moveSimTo(state.sim, action.x, action.z, state.currentLocation) };
     case 'INTERACT':
       if (state.mode !== 'live' || state.isWorking || state.currentLocation !== 'home') return state;
       return { ...state, sim: queueInteraction(state.sim, action.furnitureId, state) };
@@ -205,6 +212,7 @@ interface GameContextValue {
   ready: boolean;
   syncStatus: SyncStatus;
   resolveSaveConflict: (choice: 'local' | 'cloud') => void;
+  syncNow: () => void;
   moveTo: (x: number, z: number) => void;
   interact: (furnitureId: string) => void;
   cancel: () => void;
@@ -241,17 +249,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setReady(false);
     setSaveConflict(null);
 
-    bootstrapWorldState(userId).then((result) => {
+    bootstrapWorldState(userId).then(async (result) => {
       if (cancelled) return;
 
       if (result.kind === 'conflict') {
         setSaveConflict(result.conflict);
-      } else if (result.kind === 'state') {
-        dispatch({ type: 'HYDRATE', state: result.state });
+        setReady(true);
+        return;
       }
 
-      setSyncStatus(userId ? 'idle' : 'idle');
-      setReady(true);
+      if (result.kind === 'state') {
+        dispatch({ type: 'HYDRATE', state: result.state });
+        await saveWorldState(result.state);
+        setLocalSaveUpdatedAt(Date.now());
+
+        if (userId) {
+          setSyncStatus('syncing');
+          try {
+            await upsertCloudSave(userId, result.state);
+            if (!cancelled) setSyncStatus('synced');
+          } catch {
+            if (!cancelled) setSyncStatus('error');
+          }
+        }
+      }
+
+      if (!cancelled) setReady(true);
     });
 
     return () => {
@@ -383,12 +406,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'LEAVE_WORK' });
   }, []);
 
+  const syncNow = useCallback(() => {
+    if (!userId || !ready || saveConflict) return;
+
+    void (async () => {
+      setSyncStatus('syncing');
+      try {
+        await saveWorldState(world);
+        await upsertCloudSave(userId, world);
+        setSyncStatus('synced');
+      } catch {
+        setSyncStatus('error');
+      }
+    })();
+  }, [userId, ready, saveConflict, world]);
+
   const value = useMemo(
     () => ({
       world,
       ready,
       syncStatus,
       resolveSaveConflict,
+      syncNow,
       moveTo,
       interact,
       cancel,
@@ -412,6 +451,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ready,
       syncStatus,
       resolveSaveConflict,
+      syncNow,
       moveTo,
       interact,
       cancel,
