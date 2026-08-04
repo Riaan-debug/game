@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { getCatalogItem } from '../game/furnitureCatalog';
 import { useGame } from '../game/GameContext';
 import type { PlacedFurniture } from '../game/types';
+import { Model } from './Model';
 
 interface PlacedFurnitureMeshProps {
   placed: PlacedFurniture;
@@ -54,15 +55,24 @@ function PlacedFurnitureMesh({ placed, selected, buildMode, onSelect }: PlacedFu
 
   return (
     <group position={placed.position} rotation={[0, placed.rotation, 0]}>
-      <mesh castShadow={!mesh.flat} receiveShadow onPointerDown={handlePointerDown}>
-        <boxGeometry args={[mesh.w, mesh.height, mesh.d]} />
-        <meshStandardMaterial
-          color={mesh.color}
-          roughness={mesh.flat ? 1 : 0.8}
-          emissive={selected ? '#ffffff' : '#000000'}
-          emissiveIntensity={selected ? 0.12 : 0}
+      {item.modelPath ? (
+        <Model
+          path={item.modelPath}
+          fit={[mesh.w, mesh.height, mesh.d]}
+          onPointerDown={handlePointerDown}
+          castShadow={!mesh.flat}
         />
-      </mesh>
+      ) : (
+        <mesh castShadow={!mesh.flat} receiveShadow onPointerDown={handlePointerDown}>
+          <boxGeometry args={[mesh.w, mesh.height, mesh.d]} />
+          <meshStandardMaterial
+            color={mesh.color}
+            roughness={mesh.flat ? 1 : 0.8}
+            emissive={selected ? '#ffffff' : '#000000'}
+            emissiveIntensity={selected ? 0.12 : 0}
+          />
+        </mesh>
+      )}
       {buildMode && selected && (
         <mesh position={[0, 0.05, 0]}>
           <boxGeometry args={[mesh.w + 0.12, 0.04, mesh.d + 0.12]} />

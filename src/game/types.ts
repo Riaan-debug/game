@@ -116,6 +116,7 @@ export interface FurnitureCatalogItem {
   flat?: boolean;
   interaction?: InteractionKind;
   approachOffset?: [number, number];
+  modelPath?: string;
 }
 
 export interface InteractableDef {

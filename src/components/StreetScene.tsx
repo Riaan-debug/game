@@ -1,19 +1,14 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { LOCATION_BOUNDS, LOCATION_LABELS, STREET_PORTALS } from '../game/locations';
+import { MODEL_PATHS } from '../game/modelPaths';
 import type { LocationId } from '../game/types';
 import { LocationPropsMeshes } from './LocationProps';
 import { LocationSign } from './LocationSign';
+import { Model } from './Model';
 
 interface StreetSceneProps {
   onFloorClick: (x: number, z: number) => void;
 }
-
-const FACADE_COLORS: Record<string, string> = {
-  home: '#8a7260',
-  park: '#4a6b42',
-  work: '#7e8aa0',
-  shop: '#b08968',
-};
 
 const TREE_POSITIONS: [number, number, number][] = [
   [-10.2, 0, -6],
@@ -72,28 +67,17 @@ export function StreetScene({ onFloorClick }: StreetSceneProps) {
 
       {/* Fountain dressing (the basin itself is a clickable LocationProp) */}
       <group position={[0, 0, -3.5]}>
-        <mesh position={[0, 0.42, 0]}>
-          <cylinderGeometry args={[0.45, 0.45, 0.06, 20]} />
-          <meshStandardMaterial color="#7fb2e0" roughness={0.15} metalness={0.2} />
-        </mesh>
-        <mesh castShadow position={[0, 0.55, 0]}>
-          <cylinderGeometry args={[0.1, 0.14, 0.5, 10]} />
-          <meshStandardMaterial color="#8d99a6" roughness={0.6} />
-        </mesh>
+        <Model path={MODEL_PATHS.street.fountain} fit={[0.5, 1.1, 0.5]} position={[0, 0, 0]} />
       </group>
 
       {/* Trees along the edges */}
       {TREE_POSITIONS.map((pos, index) => (
-        <group key={index} position={pos}>
-          <mesh castShadow position={[0, 0.6, 0]}>
-            <cylinderGeometry args={[0.12, 0.18, 1.2, 8]} />
-            <meshStandardMaterial color="#5a4a38" roughness={0.9} />
-          </mesh>
-          <mesh castShadow position={[0, 1.5, 0]}>
-            <sphereGeometry args={[0.55, 10, 10]} />
-            <meshStandardMaterial color="#4f7a4a" roughness={0.85} />
-          </mesh>
-        </group>
+        <Model
+          key={index}
+          path={MODEL_PATHS.street.tree}
+          position={pos}
+          fit={[1.1, 1.6, 1.1]}
+        />
       ))}
 
       <LocationPropsMeshes />
@@ -113,7 +97,6 @@ function LotEntrance({
   const [px, , pz] = padPosition;
   const outward = Math.sign(pz);
   const facadeZ = pz + outward * 1.5;
-  const color = FACADE_COLORS[location] ?? '#8a7260';
 
   const handlePadPointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
@@ -122,16 +105,11 @@ function LotEntrance({
 
   return (
     <group>
-      {/* Facade */}
-      <mesh castShadow receiveShadow position={[px, 1.1, facadeZ]}>
-        <boxGeometry args={[3.2, 2.2, 0.4]} />
-        <meshStandardMaterial color={color} roughness={0.85} />
-      </mesh>
-      {/* Door */}
-      <mesh position={[px, 0.75, facadeZ - outward * 0.21]}>
-        <boxGeometry args={[0.8, 1.5, 0.05]} />
-        <meshStandardMaterial color="#3d3429" roughness={0.7} />
-      </mesh>
+      <Model
+        path={MODEL_PATHS.street.facade}
+        position={[px, 0, facadeZ]}
+        fit={[3.2, 2.2, 0.5]}
+      />
       {/* Glowing entrance pad — click to walk in */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}

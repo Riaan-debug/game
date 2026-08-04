@@ -9,6 +9,15 @@ A new **Street** lot connects the four destinations. Walk onto a glowing entranc
 travel. The street has its own interactables (fountain, bench) and a camera that follows
 your Sim across the larger lot. The travel bar still works everywhere.
 
+### GLTF art pass (initial)
+
+- KayKit CC0 furniture models for bed, chair, couch, and desk (box fallback for other items)
+- Textured street trees, facades, and fountain props
+- Animated `RobotExpressive` GLB for the player and NPCs (idle / walk / sit clips)
+- Asset paths and preload registry: [`src/game/modelPaths.ts`](src/game/modelPaths.ts)
+
+Attribution: [`public/models/ATTRIBUTION.md`](public/models/ATTRIBUTION.md)
+
 Architecture and migration plan: **[docs/PHASE6_NEIGHBORHOOD.md](docs/PHASE6_NEIGHBORHOOD.md)**
 
 ### Recent polish (pre–Phase 5)
